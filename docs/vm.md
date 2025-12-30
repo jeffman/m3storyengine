@@ -21,7 +21,7 @@ of the bytecode and, ultimately, a decompiler for it.
 
 Bytecode is organized into functions (subroutines).
 Each function is scoped to a "room" (literally, corresponding 1:1 with an area of the game's overworld).
-All of a room's functions are stored contiguously. There is no "data" section: everything is executable code.
+All of a room's functions are stored contiguously. There is no "data" section in the ROM: everything is executable code.
 
 There are 1001 rooms in the game.
 The first room, "room 0", is special: it does not correspond to an area of the game's overworld, but instead contains a bunch of common functions that other rooms' functions can call into, like a library of sorts.
@@ -34,18 +34,28 @@ Details on how things are physically stored and indexed in the ROM can be found 
 
 You should be generally familiar with machine code to understand this section: it is assumed that you know what registers are, what a stack is, what a program counter is, etc.
 
-The VM uses an evaluation stack as a means of passing information around and performing operations on it.
-This stack has a capacity of 1000 values.
-Despite being a stack, there are opcodes that allow somewhat arbitrary direct access to values stored anywhere on the stack: Part 3 will describe why.
-
-The VM's unit of memory is the 32-bit integer: this applies to both bytecode (opcodes) and the stack.
+The VM's word size is 32 bits.
 The address space is 16 bits.
 
 The VM has the following 16-bit registers:
 
-* `r0`-`r3`: general purpose
+* `r0`-`r3`: memory base registers
 * `sp`: stack pointer
 * `pc`: program counter
+
+The VM has 1000 words of data memory, in a separate address space from code.
+
+Data memory is treated like a stack: most opcodes push and/or pop values to/from the stack.
+Accordingly, this memory is named `stack`.
+The notation `stack[x]` means "the value stored at location `x` in data memory".
+
+Memory/stack location 0 is the bottom of the stack.
+`sp` refers to the location just above the top of the stack: the next pushed value is stored to location `sp`.
+
+Some opcodes can access arbitrary stack values, effectively treating the stack as RAM.
+For example, `load [rx,yyyy]` will read a word from `stack[rx+yyyy]` and push it to the top of the stack.
+(This is why the registers `r0`-`r3` are called "memory base registers", because they are used as a base offset for such opcodes.)
+This mechanism is used to implement variables: Part 3 goes into detail.
 
 Finally, the VM is invoked in the context of a room and always knows which room it is executing under.
 
@@ -92,8 +102,6 @@ All integers are encoded little-endian.
 ```
 
 ## Detailed opcode descriptions
-
-Assume that the stack grows left-to-right: address 0 is the bottom of the stack, address 1 is the value immediately on top of the bottom of the stack, etc.
 
 Pushing will increment the stack pointer and popping will decrement it.
 
