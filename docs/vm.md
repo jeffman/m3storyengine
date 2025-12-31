@@ -452,14 +452,14 @@ Immediately after `call` is executed and control has been transferred to the cal
 * `r1`: `8`
 * `sp`: `8`
 * `pc`: `ABCD`
-* Stack memory: `{ [r0] a, b, c, d, e, aa, ab, ac, [r1] [sp] 8, 10 }`
+* Stack memory: `{ [r0] a, b, c, d, e, aa, ab, ac, [r1] [sp] 3, 10 }`
 * Room variables: unchanged
 * Local variables: `{ }`
 * Evaluation stack: `{ }`
 
-This isn't a good state to be in: the `8` and `10` in stack memory, which are the caller's stack frame, are liable to be overwritten if the callee at `0xABCD` starts pushing stuff!
+This isn't a good state to be in: the `3` and `10` in stack memory, which are the caller's stack frame, are liable to be overwritten if the callee at `0xABCD` starts pushing stuff!
 
-By convention, the callee is responsible for preserving the `8` and `10` sitting in stack memory by allocating them as local variables and never accessing them.
+By convention, the callee is responsible for preserving the `3` and `10` sitting in stack memory by allocating them as local variables and never accessing them.
 Therefore the callee at `0xABCD` must start with `add sp,x` where `x >= 2`, and every `load/store [r1,y]` must have `2 <= y < x`.
 
 Suppose the callee starts like this:
@@ -474,9 +474,9 @@ Now the VM is in a good state:
 * `r1`: `8`
 * `sp`: `E`
 * `pc`: `ABCE`
-* Stack memory: `{ [r0] a, b, c, d, e, aa, ab, ac, [r1] 8, 10, _, _, _, _, [sp] }`
+* Stack memory: `{ [r0] a, b, c, d, e, aa, ab, ac, [r1] 3, 10, _, _, _, _, [sp] }`
 * Room variables: unchanged
-* Local variables: `{ 8, 10, _, _, _, _ }`
+* Local variables: `{ 3, 10, _, _, _, _ }`
 * Evaluation stack: `{ }`
 
 The caller's stack frame are effectively the same as local variables 0 and 1.
